@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 /// @title Contract to handle initial RBT token minting
 
 
-contract MyToken is ERC20 {
+contract RBT is ERC20 {
 
   /**
    * @dev Sets values for {name}, {symbol}, and {totalSupply} when 
