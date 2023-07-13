@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.2",
+    "axios": "^1.4.0",
     "fs-extra": "^11.1.1",
     "path": "^0.12.7",
     "solc": "^0.8.20",
