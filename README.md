@@ -12,5 +12,4 @@ Decentralised P2P scissors paper rock betting. Runs on Ethereum blockchain, smar
 - Start ganache: `ganache`
 - install dependencies: `npm i`
 - Compile into build folder: `npx tsc`
-- Deploy RBT token: `node build/index.js deploy acc0 RBT "Mint RBT" RBT 20000`
-
+- Start the game with `node build/index.js start add1 add2 bet1 bet2`
