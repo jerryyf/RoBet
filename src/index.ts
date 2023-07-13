@@ -3,26 +3,12 @@
 /// @title Deploy and interact with MyToken contract
 
 import { compileSols, writeOutput } from './solc-lib'
+import { GasHelper } from './util'
 const { Web3, ETH_DATA_FORMAT, DEFAULT_RETURN_FORMAT } = require('web3');
 import type { Web3BaseProvider, AbiStruct } from 'web3-types'
 
 let fs = require('fs')
 const path = require('path');
-
-/**
- * Helper class to calculate adjusted gas value that is higher than estimate
- */
-class GasHelper {
-    static gasMulptiplier = 1.25 // Increase by 25%
-
-    /**
-     * @param {string} gas Gas limit
-     * @return {string} Adjusted gas limit
-     */
-    static gasPay(gasLimit: string) {
-        return Math.ceil(Number(gasLimit) * GasHelper.gasMulptiplier).toString()
-    }
-}
 
 /**
  * Init WebSocket provider
