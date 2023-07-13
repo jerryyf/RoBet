@@ -70,8 +70,6 @@ contract Game is ERC20 {
     } else if (p2Score == 2) {
       gameResult == 2;
       currentPhase = GamePhases.gameOver;
-    } else {
-      currentPhase = GamePhases.r3;
     }
   }
 
