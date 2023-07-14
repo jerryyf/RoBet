@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "ganache": "ganache --wallet.seed robet",
+    "dev": "bash dev.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
