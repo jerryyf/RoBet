@@ -3,108 +3,53 @@
 pragma solidity ^0.8.0;
 
 /// @title Escrow contract
-/// This contract locks ETH until the delivery of asset
-/// is confirmed or timeout is reached. To check the delivery
-/// and wall clock time, we rely on an off-chain oracle.
+/// This contract locks ETH until a winner event is triggered
 
 contract Escrow{
-    address public funder;      // Owner address
-    address public beneficiary; // Beneficiary address
+    address public manager;     // game manager address (acc0)
+    address public p1;          // player 1 address (acc1)
+    address public p2;          // player 2 address (acc2)
     address public oracle;      // Oracle address
-    uint256 public timeout;     // Timeout in AEST as UNIX timestamp
-    bool private deliveryStatusPending;  //is delivery proof pending
-    bool public inUse;         // Contract in use
+    uint256 public totalBet;    // total bet amount from both players
+    bool public inUse;          // Contract in use
 
     // Events informing contract activities
     event CheckDelivery(address funder, address beneficiary);
-    event CheckTimeout(uint256 time);
     event DeliveryStatus(bool status);
-    event TimeoutStatus(bool status);
+    event WinnerStatus(address winner);
+    event ReturnBets(address p1, address p2);
 
     /**
      * @dev Constructor. Accept ETH as payment
      *
-     * @param _beneficiary Beneficiary address
-     * @param _oracle Oracle address 
-     * @param _timeout Timeout in AEST as UNIX timestamp 
+     * @param _player1 player 1 address
+     * @param _player2 player 2 address
+     * @param _totalSupply total bet amount
      */
-    constructor (address _beneficiary, address _oracle, uint256 _timeout) payable{
-        funder = msg.sender;    // Set escrow funder 
-        beneficiary = _beneficiary;
-        oracle = _oracle;
-        timeout = _timeout;
-        deliveryStatusPending = false;  // Proof not yet requested
+    constructor (address _player1, address _player2, uint256 _totalSupply) payable {
+        p1 = _player1;
+        p2 = _player2;
+        totalBet = _totalSupply;
         inUse = true;                   // Contract in use
     }
 
-    /**
-     * @dev Request to redeem as beneficiary. Once the request is made
-     * oracle is informed to report status via CheckDelivery event
-     */
-    function redeem() public{
-        require(inUse);  // Contract is still in use
-        require(msg.sender == beneficiary, 'Only beneficiary can call');
-        
-        if(deliveryStatusPending)    // Ignore if proof is pending
-            return;
-        deliveryStatusPending = true;    // Mark as proof pending
+    function winnerStatus(address winner) public {
+        require(msg.sender == oracle);
 
-        emit CheckDelivery(funder, beneficiary);   // Notify oracle
-    }
+        emit WinnerStatus(winner);
 
-    /**
-     * @dev Request to release funds as funder. Once the notification 
-     * is made oracle is informed via CheckTime event
-     */
-    function release() public{
-        require(inUse);  // Contract is still in use
-        require(msg.sender == funder, 'Only funder can call'); 
-        
-        if (deliveryStatusPending) // Ignore if proof is pending
-            return;
-
-        emit CheckTimeout(timeout);    // Notify oracle to check
-    }
-
-    /**
-     * @dev Oracle submit asset delivery status. If asset is delivered
-     * locked payment is released to the beneficiary and the 
-     * contract is destroyed. Otherwise, do nothing
-     *
-     * @param isDelivered Is the asset delivered
-     */
-    function deliveryStatus(bool isDelivered) public{
-        require(inUse);  // Contract is still in use
-        require(msg.sender == oracle, 'Only oracle can call');
-
-        emit DeliveryStatus(isDelivered);
-
-        if (isDelivered){   // Asset delivered
-            // Transfer all locked payment to beneficiary
-            payable(beneficiary).transfer(address(this).balance);
-            inUse = false; // Mark contract as no longer in use
+        if (winner != address(0)) {
+            // winner receives whole balance in this contract
+            payable(winner).transfer(address(this).balance);
         }
-        deliveryStatusPending = false; // Delivery status check complete
-    }
-
-    /**
-     * @dev Oracle submit timeout status. If timeout reached
-     * locked payment is released to the funder and the 
-     * contract is destroyed. Otherwise, do nothing
-     *
-     * @param isTimeout Is timeout reached
-     */
-    function timeoutStatus(bool isTimeout) public{
-        require(inUse);  // Contract is still in use
-        require(msg.sender == oracle, 'Only oracle can call');
-
-        emit TimeoutStatus(isTimeout);
-
-        if (isTimeout){ // Escrow timeout
-            // Transfer all locked payment to funder
-            payable(funder).transfer(address(this).balance);
-            inUse = false; // Mark contract as no longer in use
+        else {
+            // return bets to both players
+            emit ReturnBets(p1, p2);
+            payable(p1).transfer(address(this).balance/2);
+            payable(p2).transfer(address(this).balance/2);
         }
+
+        inUse = false;
     }
 }
 
