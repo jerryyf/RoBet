@@ -65,17 +65,17 @@ const getABI = (contractName: string, buildPath: string): AbiStruct => {
 }
 
 /**
- * Create and deploy an escrow contract holding RBT
+ * Create and deploy an escrow contract holding ETH
  * @param {typeof Web3} Web3 Web3 provider
+ * @param {string} player1 address of player 1 in the game
+ * @param {string} player2 address of player 2 in the game
  * @param {number} tokenTotalSupply total bet amount
  * @returns address of deployed contract
  */
-const deploy = async (web3: typeof Web3, tokenTotalSupply: number) => {
+const deploy = async (web3: typeof Web3, player1: string, player2: string, tokenTotalSupply: number) => {
     const buildPath = path.resolve(__dirname, '');
     const accountName = "acc0"
-    const contractName = "RBT"
-    const tokenName = "Mint RBT"
-    const tokenSymbol = "RBT"
+    const contractName = "Escrow"
 
     try {
         getAccount(web3, accountName)
@@ -100,7 +100,7 @@ const deploy = async (web3: typeof Web3, tokenTotalSupply: number) => {
     // Deploy contract
     const contract = new web3.eth.Contract(compiledContract.contracts[contractName][contractName].abi)
     const data = compiledContract.contracts[contractName][contractName].evm.bytecode.object
-    const args = [tokenName, tokenSymbol, tokenTotalSupply]
+    const args = [player1, player2, tokenTotalSupply]
 
     // Deploy contract with given constructor arguments
     try {
@@ -108,7 +108,6 @@ const deploy = async (web3: typeof Web3, tokenTotalSupply: number) => {
             data,
             arguments: args
         });
-
         // Get current average gas price
         const gasPrice = await web3.eth.getGasPrice(ETH_DATA_FORMAT)
         const gasLimit = await contractSend.estimateGas(
@@ -137,7 +136,7 @@ const deploy = async (web3: typeof Web3, tokenTotalSupply: number) => {
  */
 const transact = async (web3: typeof Web3, contractAddress: string) => {
     const buildPath = path.resolve(__dirname, '')
-    const contractName = "RBT"
+    const contractName = "Escrow"
 
     const abi = getABI(contractName, buildPath)
     const contract = new web3.eth.Contract(abi, contractAddress)
@@ -220,7 +219,7 @@ const transact = async (web3: typeof Web3, contractAddress: string) => {
  */
 const startGameBet = async (web3: typeof Web3, player1: string, player2: string, bet1: number, bet2: number) => {
     // deploy the escrow contract
-    const contractAddress = await deploy(web3, bet1+bet2)
+    const contractAddress = await deploy(web3, player1, player2, bet1+bet2)
 }
 
 /**
@@ -233,7 +232,7 @@ const startGameBet = async (web3: typeof Web3, player1: string, player2: string,
  */
 const payoutWinner = async (web3: typeof Web3, contractAddress: string, winner: string, loser: string) => {
     const buildPath = path.resolve(__dirname, '')
-    const contractName = "RBT"
+    const contractName = "Escrow"
 
     const abi = getABI(contractName, buildPath)
     const contract = new web3.eth.Contract(abi, contractAddress)
@@ -291,7 +290,7 @@ if (cmdArgs.length < 1) {
     console.log('Connected to Web3 provider.')
 
     if (cmdArgs[0] == 'deploy') {
-        await deploy(web3, 20000)
+        // await deploy(web3, 20000)
     } else if (cmdArgs[0] == 'transact') {
         await transact(web3, cmdArgs[2])
     } else if (cmdArgs[0] == 'start') {
