@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "ganache": "ganache --wallet.seed robet",
+    "escrow": "bash escrow.sh",
+    "game": "bash game.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,6 +19,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.2",
+    "axios": "^1.4.0",
     "fs-extra": "^11.1.1",
     "path": "^0.12.7",
     "solc": "^0.8.20",
