@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 /// @title Contract to handle game state
 
 
-contract Game { // is ERC20
+contract Game {
   // Player addresses
   address public p1;
   address public p2;
@@ -33,6 +33,12 @@ contract Game { // is ERC20
     gameOver
   }
 
+  enum Choice {
+    scissors,
+    paper,
+    rock
+  }
+
   GamePhases public currentPhase;
 
   // Events informing phases of the game
@@ -44,12 +50,10 @@ contract Game { // is ERC20
    * @dev Sets values for {name}, {symbol}, and {totalSupply} when 
    * the contract is deployed. Also, set total supply to contract creator
    *
-   * @param _name Token name (string)
-   * @param _symbol Token symbol (string)
-   * @param _totalSupply Total supply of tokens
    */
-  constructor(string memory _name, string memory _symbol, uint256 _totalSupply) { // ERC20(_name, _symbol)
-    //_mint(msg.sender, _totalSupply);
+  constructor (string memory _player1, string memory _player2) payable {
+    p1 = address(bytes20(bytes(_player1)));
+    p2 = address(bytes20(bytes(_player2)));
   }
 
   // Functions called by frontend to send account address of each player
@@ -115,6 +119,27 @@ contract Game { // is ERC20
         p2Score++;
     }
     _;
+  }
+
+  function playGame(Choice p1choice, Choice p2choice) pure public returns (int) {
+    // p1 win conditions
+    if (p1choice == Choice.scissors && p2choice == Choice.paper ||
+      p1choice == Choice.paper && p2choice == Choice.rock ||
+      p1choice == Choice.rock && p2choice == Choice.scissors)
+    {
+      return 1;
+      // uncomment if address needed
+      // return p1;
+    }
+
+    // p2 win conditions
+    if (p2choice == Choice.scissors && p1choice == Choice.paper ||
+    p2choice == Choice.paper && p1choice == Choice.rock ||
+    p2choice == Choice.rock && p1choice == Choice.scissors)
+    {
+      return 2;
+    }
+    else return 0; // draw condition
   }
 
   modifier isR1() {
