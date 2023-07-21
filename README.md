@@ -12,7 +12,7 @@ Decentralised P2P scissors paper rock betting. Runs on Ethereum blockchain, smar
 - Install dependencies: `npm i`
 - Compile into build folder: `npx tsc`
 - Start ganache local blockchain with predefined seed: `npm run ganache`. This will generate the same private keys every time.
-- Deploy contracts: `npm run dev`
+- Deploy contracts: `npm run escrow` and `npm run game`
 
 ## Accounts reference
 

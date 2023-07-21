@@ -47,8 +47,7 @@ contract Game {
   event GameOver(address winner);
 
   /**
-   * @dev Sets values for {name}, {symbol}, and {totalSupply} when 
-   * the contract is deployed. Also, set total supply to contract creator
+   * @dev set player 1 and 2 addresses
    *
    */
   constructor (string memory _player1, string memory _player2) payable {
@@ -121,6 +120,9 @@ contract Game {
     _;
   }
 
+  /*
+    Advances 1 round of the game. Returns 0 for draw, 1 for p1 win, 2 for p2 win.
+  */
   function playGame(Choice p1choice, Choice p2choice) pure public returns (int) {
     // p1 win conditions
     if (p1choice == Choice.scissors && p2choice == Choice.paper ||
