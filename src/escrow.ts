@@ -1,6 +1,6 @@
 /// SPDX-License-Identifier: UNLICENSED
 
-/// @title Deploy and interact with MyToken contract
+/// @title Deploy and interact with Escrow contract
 
 import { compileSols, writeOutput } from './solc-lib'
 import { GasHelper } from './util'
@@ -66,7 +66,7 @@ const getABI = (contractName: string, buildPath: string): AbiStruct => {
 
 /**
  * Create and deploy an escrow contract holding ETH
- * @param {typeof Web3} Web3 Web3 provider
+ * @param {typeof Web3} web3 Web3 provider
  * @param {string} player1 address of player 1 in the game
  * @param {string} player2 address of player 2 in the game
  * @param {number} tokenTotalSupply total bet amount
