@@ -2,15 +2,17 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+//import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 
 /// @title Contract to handle game state
 
 
-contract Game is ERC20 {
+contract Game { // is ERC20
   // Player addresses
   address public p1;
   address public p2;
+  address public p0 = 0x0000000000000000000000000000000000000000; // Indicating no player
 
   // Player scores
   uint public p1Score;
@@ -33,6 +35,11 @@ contract Game is ERC20 {
 
   GamePhases public currentPhase;
 
+  // Events informing phases of the game
+  // event RoundOneOver();
+  // event RoundTwoOver();
+  event GameOver(address winner);
+
   /**
    * @dev Sets values for {name}, {symbol}, and {totalSupply} when 
    * the contract is deployed. Also, set total supply to contract creator
@@ -41,66 +48,71 @@ contract Game is ERC20 {
    * @param _symbol Token symbol (string)
    * @param _totalSupply Total supply of tokens
    */
-  constructor(string memory _name, string memory _symbol, uint256 _totalSupply) ERC20(_name, _symbol) {
-    _mint(msg.sender, _totalSupply);
+  constructor(string memory _name, string memory _symbol, uint256 _totalSupply) { // ERC20(_name, _symbol)
+    //_mint(msg.sender, _totalSupply);
   }
 
   // Functions called by frontend to send account address of each player
-  function setP1(address memory _address) public {
+  function setP1(address _address) public {
     p1 = _address;
   }
 
-  function setP2(address memory _address) public {
+  function setP2(address _address) public {
     p2 = _address;
   }
 
   // Functions called by frontend to send result of rounds and game to backend
   // _result is 1 if p1 wins, 2 if p2 wins, 0 if draw
-  function setR1Result(uint memory _result) public notGameOver() isR1() updateScores(_result) {
+  function setR1Result(uint _result) public notGameOver() isR1() updateScores(_result) {
     r1Result = _result;
     currentPhase = GamePhases.r2;
   }
   
-  function setR2Result(uint memory _result) public notGameOver() isR2() updateScores(_result) {
+  function setR2Result(uint _result) public notGameOver() isR2() updateScores(_result) {
     r2Result = _result;
     // Before the third round, first player to 2 points wins
     if (p1Score == 2) {
       gameResult == 1;
+      emit GameOver(p1);
       currentPhase = GamePhases.gameOver;
     } else if (p2Score == 2) {
       gameResult == 2;
+      emit GameOver(p2);
       currentPhase = GamePhases.gameOver;
     } else {
       currentPhase = GamePhases.r3;
     }
   }
 
-  function setR3Result(uint memory _result) public notGameOver() isR3() updateScores(_result) {
+  function setR3Result(uint _result) public notGameOver() isR3() updateScores(_result) {
     r3Result = _result;
     // After the third round, player with higher points wins
     if (p1Score > p2Score) {
       gameResult == 1;
+      emit GameOver(p1);
       currentPhase = GamePhases.gameOver;
     } else if (p2Score > p1Score) {
       gameResult == 2;
+      emit GameOver(p2);
       currentPhase = GamePhases.gameOver;
     } else {
       gameResult == 0;
+      emit GameOver(p0);
       currentPhase = GamePhases.gameOver;
     } 
   }
 
-  function setGameResult(uint memory _result) public {
+  function setGameResult(uint _result) public {
     gameResult = _result;
   }
 
-  modifier updateScores(string memory _result) {
+  modifier updateScores(uint _result) {
     // If p1 wins add a point to p1
     if (_result == 1) {
-        p1++;
+        p1Score++;
     // If p2 wins add a point to p2
     } else if (_result == 2) {
-        p2++;
+        p2Score++;
     }
     _;
   }
@@ -121,7 +133,7 @@ contract Game is ERC20 {
   }
 
   modifier notGameOver() {
-    require(currentPhase != GamePhases.gameOver, "This action cannot be performed after the game is over");
+    require(currentPhase != GamePhases.gameOver, "This game is over");
     _;
   }
 }
