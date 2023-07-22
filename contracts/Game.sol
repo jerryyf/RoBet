@@ -7,12 +7,17 @@ pragma solidity ^0.8.0;
 
 /// @title Contract to handle game state
 
+import "./Escrow.sol";
 
 contract Game {
   // Player addresses
   address public p1;
   address public p2;
-  address public p0 = 0x0000000000000000000000000000000000000000; // Indicating no player
+  address public p0; // Indicating no player (default value is zero)
+
+  // Escrow contract address and object
+  address public escrowAddr;
+  Escrow public escrowContract;
 
   // Player scores
   uint public p1Score;
@@ -50,9 +55,10 @@ contract Game {
    * @dev set player 1 and 2 addresses
    *
    */
-  constructor (string memory _player1, string memory _player2) payable {
+  constructor (string memory _player1, string memory _player2, string memory _escrowAddr) payable {
     p1 = address(bytes20(bytes(_player1)));
     p2 = address(bytes20(bytes(_player2)));
+    escrowAddr = address(bytes20(bytes(_escrowAddr)));
   }
 
   // Functions called by frontend to send account address of each player
