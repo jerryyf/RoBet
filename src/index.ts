@@ -69,7 +69,7 @@ const getABI = (contractName: string, buildPath: string): AbiStruct => {
  */
 const deployGame = async (web3: typeof Web3, player1: string, player2: string, escrowAddress: string) => {
     const buildPath = path.resolve(__dirname, '')
-    const accountName = `acc{0}` // manager account deploys
+    const accountName = "acc0" // manager account deploys
     const contractName = "Game"
 
     try {
