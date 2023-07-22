@@ -2,9 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-// import breaks deployment at the moment
-// import "./Game.sol";
-
 /// @title Escrow contract
 /// This contract locks ETH until a winner event is triggered
 
@@ -15,8 +12,6 @@ contract Escrow {
     address public oracle;      // Oracle address
     uint256 public totalBet;    // total bet amount from both players
     bool public inUse;          // Contract in use
-    address gameAddress;        // Game contract address
-    // Game public gameContract;   // Game object
 
     // Events informing contract activities
     event CheckDelivery(address funder, address beneficiary);
@@ -36,9 +31,6 @@ contract Escrow {
         p2 = address(bytes20(bytes(_player2)));
         totalBet = _totalSupply;
         inUse = true;                   // Contract in use
-        // gameAddress = _gameAddr;
-        // gameContract = Game(_gameAddr);
-
     }
 
     function winnerStatus(address winner) public returns (bool) {

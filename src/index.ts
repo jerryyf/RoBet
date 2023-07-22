@@ -1,7 +1,3 @@
-/// SPDX-License-Identifier: UNLICENSED
-
-/// @title Deploy and interact with Escrow contract
-
 import { compileSols, writeOutput } from './solc-lib'
 import { GasHelper } from './util'
 const { Web3, ETH_DATA_FORMAT, DEFAULT_RETURN_FORMAT } = require('web3');
@@ -64,17 +60,80 @@ const getABI = (contractName: string, buildPath: string): AbiStruct => {
     }
 }
 
+
+/**
+ * Deploys the game contract given:
+ * @param {typeof Web3} web3 Web3 provider
+ * @param {number} player1 player 1 address
+ * @param {number} player2 player 2 address
+ */
+const deployGame = async (web3: typeof Web3, player1: string, player2: string, escrowAddress: string) => {
+    const buildPath = path.resolve(__dirname, '')
+    const accountName = `acc{0}` // manager account deploys
+    const contractName = "Game"
+
+    try {
+        getAccount(web3, accountName)
+    } catch (error) {
+        console.error(error)
+        throw 'Cannot access accounts'
+    }
+    console.log('Accessing account: ' + accountName)
+    const from = web3.eth.accounts.wallet[0].address
+
+    // Compile contract and save it into a file for future use
+    let compiledContract: any
+    try {
+        compiledContract = compileSols([contractName])
+        writeOutput(compiledContract, buildPath)
+    } catch (error) {
+        console.error(error)
+        throw 'Error while compiling contract'
+    }
+    console.log('Contract compiled')
+
+    // Deploy contract
+    const contract = new web3.eth.Contract(compiledContract.contracts[contractName][contractName].abi)
+    const data = compiledContract.contracts[contractName][contractName].evm.bytecode.object
+    const args = [player1, player2, escrowAddress]
+
+    // Deploy contract with given constructor arguments
+    try {
+        const contractSend = contract.deploy({
+            data,
+            arguments: args
+        });
+        // Get current average gas price
+        const gasPrice = await web3.eth.getGasPrice(ETH_DATA_FORMAT)
+        const gasLimit = await contractSend.estimateGas(
+            { from },
+            DEFAULT_RETURN_FORMAT, // the returned data will be formatted as a bigint
+        );
+        const tx = await contractSend.send({
+            from,
+            gasPrice,
+            gas: GasHelper.gasPay(gasLimit)
+        })
+        console.log('Contract contract deployed at address: ' + tx.options.address)
+
+        return tx.options.address
+    } catch (error) {
+        console.error(error)
+        throw 'Error while deploying contract'
+    }
+
+}
 /**
  * Create and deploy an escrow contract holding ETH
  * @param {typeof Web3} web3 Web3 provider
  * @param {string} player1 address of player 1 in the game
  * @param {string} player2 address of player 2 in the game
- * @param {number} tokenTotalSupply total bet amount
+ * @param {number} totalBet total bet amount
  * @returns address of deployed contract
  */
-const deploy = async (web3: typeof Web3, player1: string, player2: string, tokenTotalSupply: number) => {
+const deployEscrow = async (web3: typeof Web3, player1: string, player2: string, totalBet: number) => {
     const buildPath = path.resolve(__dirname, '');
-    const accountName = "acc0"
+    const accountName = "acc0" // manager account deploys
     const contractName = "Escrow"
 
     try {
@@ -100,7 +159,7 @@ const deploy = async (web3: typeof Web3, player1: string, player2: string, token
     // Deploy contract
     const contract = new web3.eth.Contract(compiledContract.contracts[contractName][contractName].abi)
     const data = compiledContract.contracts[contractName][contractName].evm.bytecode.object
-    const args = [player1, player2, tokenTotalSupply]
+    const args = [player1, player2, totalBet]
 
     // Deploy contract with given constructor arguments
     try {
@@ -212,14 +271,13 @@ const transact = async (web3: typeof Web3, contractAddress: string) => {
  * as the total of bets
  * 
  * @param {typeof Web3} Web3 Web3 provider 
- * @param {string} player1 address of player 1 in the game
- * @param {string} player2 address of player 2 in the game
- * @param {number} bet1 bet of player 1 in the game
- * @param {number} bet2 bet of player 2 in the game
+ * 
  */
 const startGameBet = async (web3: typeof Web3, player1: string, player2: string, bet1: number, bet2: number) => {
     // deploy the escrow contract
-    const contractAddress = await deploy(web3, player1, player2, bet1+bet2)
+    if (bet1 != bet2) throw Error;
+    const escrowAddress = await deployEscrow(web3, player1, player2, bet1+bet2)
+    const gameAddress = await deployGame(web3, player1, player2, escrowAddress)
 }
 
 /**
@@ -289,14 +347,13 @@ if (cmdArgs.length < 1) {
     }
     console.log('Connected to Web3 provider.')
 
-    if (cmdArgs[0] == 'deploy') {
-        // await deploy(web3, 20000)
-    } else if (cmdArgs[0] == 'transact') {
-        await transact(web3, cmdArgs[2])
-    } else if (cmdArgs[0] == 'start') {
+    if (cmdArgs[0] == 'start') {
         // given the two accounts and bets, create and deploy an escrow
         // contract that holds the totalSupply of the two bets
         startGameBet(web3, cmdArgs[1], cmdArgs[2], parseInt(cmdArgs[3]), parseInt(cmdArgs[4]))
+    } else if (cmdArgs[0] == 'transact') {
+        await transact(web3, cmdArgs[2])
+    } else if (cmdArgs[0] == 'start') {
     } else if (cmdArgs[0] == 'end') {
         // when the game is complete, pay out the winner the entire
         // escrow contract by transferring from the loser to the winner

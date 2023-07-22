@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "ganache": "ganache --wallet.seed robet",
-    "escrow": "bash escrow.sh",
-    "game": "bash game.sh",
+    "start": "bash start.sh",
+    "dev": "bash dev.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
