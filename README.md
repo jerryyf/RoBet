@@ -26,7 +26,13 @@ Decentralised P2P scissors paper rock betting. Runs on Ethereum blockchain, smar
 - Initial setup:
 
   ```sh
-  npm run setup
+  npm install
+  ```
+  ```sh
+  npx prisma db push
+  ```
+  ```sh
+  npx prisma db seed
   ```
 
 - Start dev server:
