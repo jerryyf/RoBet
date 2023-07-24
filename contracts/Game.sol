@@ -149,7 +149,8 @@ contract Game {
   }
 
   function gameOver(address winner) public returns (bool) {
-    return escrowContract.payoutWinner(winner);
+    if (winner != address(0)) return escrowContract.payoutWinner(winner);
+    else return escrowContract.returnBets();
   }
 
   modifier isR1() {
