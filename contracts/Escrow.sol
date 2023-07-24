@@ -9,15 +9,8 @@ contract Escrow {
     address public manager;     // game manager address (acc0)
     address public p1;          // player 1 address (acc1)
     address public p2;          // player 2 address (acc2)
-    address public oracle;      // Oracle address
     uint256 public totalBet;    // total bet amount from both players
     bool public inUse;          // Contract in use
-
-    // Events informing contract activities
-    event CheckDelivery(address funder, address beneficiary);
-    event DeliveryStatus(bool status);
-    event WinnerStatus(address winner);
-    event ReturnBets(address p1, address p2);
 
     /**
      * @dev Constructor. Accept ETH as payment
