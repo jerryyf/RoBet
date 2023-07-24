@@ -189,89 +189,14 @@ const deployEscrow = async (web3: typeof Web3, player1: string, player2: string,
 }
 
 /**
- * Given a deployed escrow contract, transact all 
- * @param {typeof Web3} Web3 Web3 provider
- * @param {string} contractAddress address of deployed escrow contract
- */
-const transact = async (web3: typeof Web3, contractAddress: string) => {
-    const buildPath = path.resolve(__dirname, '')
-    const contractName = "Escrow"
-
-    const abi = getABI(contractName, buildPath)
-    const contract = new web3.eth.Contract(abi, contractAddress)
-
-    try {
-        getAccount(web3, 'acc0')
-        getAccount(web3, 'acc1')
-        getAccount(web3, 'acc2')
-    } catch (error) {
-        console.error(error)
-        throw 'Cannot access accounts'
-    }
-
-    // Verify token symbol
-    try {
-        const symbol = await contract.methods.symbol().call()
-        console.log(`Token symbol is: ${symbol}`)
-    } catch (error) {
-        console.error('Error while checking symbol')
-        console.error(error)
-    }
-
-    // Verify total token supply
-    try {
-        const totalSupply = await contract.methods.totalSupply().call()
-        console.log(`Token supply is: ${totalSupply}`)
-    } catch (error) {
-        console.error('Error while checking total supply')
-        console.error(error)
-    }
-
-    // Check token balance as token deployer
-    let from = web3.eth.accounts.wallet[0].address
-    try {
-        const balance = await contract.methods.balanceOf(from).call()
-        console.log(`Balance of token deployer is: ${balance}`)
-    } catch (error) {
-        console.error(error)
-    }
-
-    // Transfer tokens from address 0 to address 1 and check balance
-    let to = web3.eth.accounts.wallet[1].address
-    try {
-
-        const gasPrice = await web3.eth.getGasPrice(ETH_DATA_FORMAT)
-        const gasLimit = await contract.methods.transfer(to, 2000).estimateGas(
-            { from },
-            DEFAULT_RETURN_FORMAT, // the returned data will be formatted as a bigint
-        );
-        const tx = await contract.methods.transfer(to, 2000).send({
-            from,
-            gasPrice,
-            gas: GasHelper.gasPay(gasLimit)
-        })
-
-        console.log(`20.00 tokens transferred from address ${from} to address ${to} in transaction ${tx.transactionHash}`)
-
-        // Check balance as address 0 and 1
-        const balance0 = await contract.methods.balanceOf(from).call()
-        console.log(`Balance of address 0 is: ${balance0}`)
-
-        const balance1 = await contract.methods.balanceOf(to).call()
-        console.log(`Balance of address 1 is: ${balance1}`)
-
-    } catch (error) {
-        console.error('Error while transferring tokens and checking balance')
-        console.error(error)
-    }
-}
-
-/**
  * Create an escrow between player 1 and 2 with the given supply
  * as the total of bets
  * 
  * @param {typeof Web3} Web3 Web3 provider 
- * 
+ * @param {string} player1 address of player 1 in the game
+ * @param {string} player2 address of player 2 in the game
+ * @param {number} bet1 bet amount of player 1
+ * @param {number} bet1 bet amount of player 2
  */
 const startGameBet = async (web3: typeof Web3, player1: string, player2: string, bet1: number, bet2: number) => {
     // deploy the escrow contract
@@ -351,9 +276,6 @@ if (cmdArgs.length < 1) {
         // given the two accounts and bets, create and deploy an escrow
         // contract that holds the totalSupply of the two bets
         startGameBet(web3, cmdArgs[1], cmdArgs[2], parseInt(cmdArgs[3]), parseInt(cmdArgs[4]))
-    } else if (cmdArgs[0] == 'transact') {
-        await transact(web3, cmdArgs[2])
-    } else if (cmdArgs[0] == 'start') {
     } else if (cmdArgs[0] == 'end') {
         // when the game is complete, pay out the winner the entire
         // escrow contract by transferring from the loser to the winner
