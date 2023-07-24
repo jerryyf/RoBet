@@ -15,7 +15,7 @@ const solc = require('solc')
 const findImports = (path: string): any => {
     try {
         return {
-            contents: fs.readFileSync(`node_modules/${path}`, 'utf8')
+            contents: fs.readFileSync(`contracts/${path}`, 'utf8')
         }
     } catch (e: any) {
         return {
