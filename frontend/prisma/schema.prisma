@@ -1,0 +1,16 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model lobby {
+  id         String   @id @default(cuid())
+  wager      Int
+  creator    String
+  challenger String?
+  createdAt  DateTime @default(now())
+}

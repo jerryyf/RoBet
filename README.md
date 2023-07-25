@@ -20,3 +20,30 @@ Decentralised P2P scissors paper rock betting. Runs on Ethereum blockchain, smar
 - acc0: manager that deploys
 - acc1: player1
 - acc2: player2
+
+## Frontend Development
+
+- Initial setup:
+
+  ```sh
+  npm install
+  ```
+  ```sh
+  npx prisma db push
+  ```
+  ```sh
+  npx prisma db seed
+  ```
+
+- Start dev server:
+
+  ```sh
+  npm run dev
+  ```
+
+This starts your app in development mode, rebuilding assets on file changes.
+
+The database seed script creates a new user with some data you can use to get started:
+
+- Email: `rachel@remix.run`
+- Password: `racheliscool`
