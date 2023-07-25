@@ -1,12 +1,10 @@
-import { ActionArgs, LoaderArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { ToastContainer } from "react-toastify";
-import {
-  createLobby,
-  getAllLobby,
-  getLobby,
-  lobby,
-} from "~/models/lobby.server";
+import { redirect, type ActionArgs, type LoaderArgs } from "@remix-run/node";
+import { useActionData, useLoaderData } from "@remix-run/react";
+import { useEffect } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import type { lobby } from "../models/lobby.server";
+import { addPlayerToLobby, getLobby } from "../models/lobby.server";
+import { createGame } from "~/models/game.server";
 
 export const loader = async ({ params, request }: LoaderArgs) => {
   const url = params?.id;
@@ -19,25 +17,36 @@ export const loader = async ({ params, request }: LoaderArgs) => {
   }
 };
 
-export const action = async ({ request }: ActionArgs) => {
+export const action = async ({ params, request }: ActionArgs) => {
   const formData = await request.formData();
+  console.dir(params, { deppth: null });
   const address = formData.get("address")?.toString();
+  const lobby = (await getLobby(params?.id ?? ""))[0] as unknown as lobby;
+  console.log(lobby);
   if (address) {
+    console.log(lobby.creator, address);
     const response = await fetch("http://localhost:3005/start", {
       method: "POST",
       body: JSON.stringify({
-        p1: "0xcf389bef5486e62a0fd1b31686394264773fe3cd54b6ed3346a33efe228b872a",
-        p2: "0xcb9f0700855870a3fc13fe437b89c56e44b812e8b34113a1d9772025d0f4e383",
-        p1bet: "1",
-        p2bet: "1",
+        p1: lobby.creator,
+        p2: address,
+        p1bet: lobby.wager,
+        p2bet: lobby.wager,
       }),
       headers: {
         "Content-type": "application/json; charset=UTF-8",
       },
     });
-    const data = await response.text();
-    console.log("data_______", data, "________");
-    return { status: 200 };
+    const data = await response.json();
+    console.log(data);
+    if (data?.error) return { status: 403 };
+    await addPlayerToLobby(address, params?.id ?? "");
+    const lobbyData = (await getLobby(params?.id ?? ""))[0] as unknown as lobby;
+    console.log("_______________________");
+    console.log(lobbyData);
+    const gameId = await createGame(lobbyData);
+    console.dir(gameId);
+    return redirect(`/game/${gameId.id}/${address}`);
   } else {
     return { status: 404 };
   }
@@ -45,10 +54,20 @@ export const action = async ({ request }: ActionArgs) => {
 
 export default function LobbyStart() {
   const { id } = useLoaderData<typeof loader>();
+  const data = useActionData();
   let game = {} as lobby;
   if (id.length === 1) {
     game = id[0] as unknown as lobby;
   }
+
+  useEffect(() => {
+    if (data?.status === 403) {
+      toast.error("Contract could not be started");
+    }
+    if (data?.status === 404) {
+      toast.error("Invalid Address");
+    }
+  }, [data]);
 
   return (
     <>
@@ -80,30 +99,31 @@ export default function LobbyStart() {
                     </h1>
 
                     <p className="mx-auto mt-6 max-w-lg text-center text-xl text-white sm:max-w-3xl"></p>
-                    <div className="mx-auto mt-10 max-w-sm justify-center sm:flex sm:max-w-none sm:justify-center">
-                      <div className="items-center justify-center space-y-4 sm:mx-auto sm:inline-grid  sm:gap-5 sm:space-y-0">
-                        <form
-                          method="post"
-                          className="items-center justify-center"
-                        >
-                          <label className="relative top-0.5 mr-4 text-lg text-slate-500">
-                            Enter Wallet Address:{" "}
-                            <input
-                              className="relative bottom-0.5 rounded-lg pb-3 pr-16"
-                              type="text"
-                              name="address"
-                            />
-                          </label>
+                    <div className=" mx-auto mt-10 max-w-sm items-center  sm:flex sm:max-w-none sm:justify-center">
+                      <form
+                        method="post"
+                        className="w-11/12 items-center justify-center"
+                      >
+                        <div className="mx-auto mt-10 max-w-sm text-center font-extrabold  sm:flex sm:max-w-none sm:justify-center">
+                          Enter Wallet Address
+                        </div>
+
+                        <input
+                          className="s relative w-full rounded-lg py-2  text-center text-2xl font-extrabold"
+                          type="text"
+                          name="address"
+                        />
+                        <div className="mx-auto mt-6 max-w-sm font-extrabold sm:flex sm:max-w-none sm:justify-center">
                           <button
                             type="submit"
                             value="submit"
                             name="action"
-                            className="float-right mb-12 ml-auto mr-5 rounded-lg border bg-slate-300 px-2 py-2"
+                            className=" mb-12  max-w-sm rounded-lg border bg-slate-300 px-2 py-2 font-extrabold sm:flex sm:max-w-none sm:justify-center"
                           >
                             Join Game
                           </button>
-                        </form>
-                      </div>
+                        </div>
+                      </form>
                     </div>
                     <div className="mx-auto mt-10 max-w-sm font-extrabold sm:flex sm:max-w-none sm:justify-center">
                       <div className="text-4xl  text-slate-300">
