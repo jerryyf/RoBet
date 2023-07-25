@@ -194,8 +194,9 @@ const deployEscrow = async (web3: typeof Web3, player1: string, player2: string,
  * 
  * @param web3 Web3 provider
  * @param gameAddr Game contract address
- * @param p1choice 1:"scissors", "paper" or "rock"
- * @param p2choice "scissors", "paper" or "rock"
+ * @param p1choice 1:"scissors", 2:"paper" 3:"rock"
+ * @param p2choice 1:"scissors", 2:"paper" 3:"rock"
+ * @returns winner (or draw)
  */
 export const playerChoice = async (gameAddr: string, p1choice: number, p2choice: number) => {
     let web3Provider: Web3BaseProvider
@@ -258,7 +259,7 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
             from: from
         })
 
-        // console.log(`Winner is ${winner}`);
+        return winner;
 
     } catch (error) {
         console.error(error)
@@ -277,12 +278,13 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
  */
 const startGameBet = async (web3: typeof Web3, player1: string, player2: string, bet1: number, bet2: number) => {
     const buildPath = path.resolve(__dirname, '')
-    // deploy the escrow contract
     if (bet1 != bet2) throw Error;
+
+    // deploy escrow and game contracts
     const escrowAddress = await deployEscrow(web3, player1, player2, bet1+bet2)
     const gameAddress = await deployGame(web3, player1, player2, escrowAddress)
+
     console.log("player1: %s\nplayer2: %s", player1, player2)
-    await playerChoice(gameAddress, 1, 2)
     const escrow = new web3.eth.Contract(getABI("Escrow.sol", buildPath), escrowAddress)
     console.log(await escrow.methods.getUse().call())
     return gameAddress
@@ -386,6 +388,9 @@ if (cmdArgs.length < 1) {
         // given the two accounts and bets, create and deploy an escrow
         // contract that holds the totalSupply of the two bets
         startGameBet(web3, cmdArgs[1], cmdArgs[2], parseInt(cmdArgs[3]), parseInt(cmdArgs[4]))
+    } else if (cmdArgs[0] == 'play') {
+        // takes in game contract address + player choices
+        playerChoice(cmdArgs[1], parseInt(cmdArgs[2]), parseInt(cmdArgs[3]))
     } else if (cmdArgs[0] == 'end') {
         // when the game is complete, pay out the winner the entire
         // escrow contract by transferring from the loser to the winner
