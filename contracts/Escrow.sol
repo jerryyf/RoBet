@@ -19,9 +19,9 @@ contract Escrow {
      * @param _player2 player 2 address
      * @param _totalSupply total bet amount
      */
-    constructor (string memory _player1, string memory _player2, uint256 _totalSupply) payable {
-        p1 = address(bytes20(bytes(_player1)));
-        p2 = address(bytes20(bytes(_player2)));
+    constructor (address _player1, address _player2, uint256 _totalSupply) payable {
+        p1 = _player1;
+        p2 = _player2;
         totalBet = _totalSupply;
         inUse = true;                   // Contract in use
     }
@@ -41,13 +41,23 @@ contract Escrow {
 
     function payoutWinner(address winner) public returns (bool) {
         payable(winner).transfer(address(this).balance);
+        inUse = false;
         return true;
     }
 
     function returnBets() public returns (bool) {
         payable(p1).transfer(address(this).balance/2);
         payable(p2).transfer(address(this).balance/2);
+        inUse = false;
         return true;
+    }
+
+    function getTotalBet() public view returns (uint256) {
+        return totalBet;
+    }
+
+    function getUse() public view returns (bool) {
+        return inUse;
     }
 }
 
