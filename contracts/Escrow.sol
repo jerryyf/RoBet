@@ -26,17 +26,8 @@ contract Escrow {
         inUse = true;                   // Contract in use
     }
 
-    function winnerStatus(address winner) public returns (bool) {
-
-        if (winner != address(0)) {
-            // winner receives whole balance in this contract and terminates
-            inUse = false;
-            return true;
-        }
-        else {
-            // no winner, so contract is still in use
-            return false;
-        }
+    function deposit() public payable {
+        require((msg.sender == p1 || msg.sender == p2), "Do not try to enter game");
     }
 
     function payoutWinner(address winner) public returns (bool) {
@@ -47,17 +38,21 @@ contract Escrow {
 
     function returnBets() public returns (bool) {
         payable(p1).transfer(address(this).balance/2);
-        payable(p2).transfer(address(this).balance/2);
+        payable(p2).transfer(address(this).balance);
         inUse = false;
         return true;
     }
 
-    function getTotalBet() public view returns (uint256) {
-        return totalBet;
+    function getTotalBet() public view returns (uint) {
+        return address(this).balance;
     }
 
     function getUse() public view returns (bool) {
         return inUse;
+    }
+
+    function getBalance(address _address) public view returns (uint) {
+        return _address.balance;
     }
 }
 
