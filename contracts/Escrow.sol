@@ -19,9 +19,9 @@ contract Escrow {
      * @param _player2 player 2 address
      * @param _totalSupply total bet amount
      */
-    constructor (string memory _player1, string memory _player2, uint256 _totalSupply) payable {
-        p1 = address(bytes20(bytes(_player1)));
-        p2 = address(bytes20(bytes(_player2)));
+    constructor (address _player1, address _player2, uint256 _totalSupply) payable {
+        p1 = _player1;
+        p2 = _player2;
         totalBet = _totalSupply;
         inUse = true;                   // Contract in use
     }

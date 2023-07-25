@@ -242,12 +242,12 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
 
         const winner = await web3.eth.subscribe('logs', {
             address: gameAddr,
-            topics: [web3.utils.sha3('winnerChosen(string)')]
+            topics: [web3.utils.sha3('GameOver(address)')]
         })
 
         winner.on('data', async (event: any) => {
             const eventData = web3.eth.abi.decodeLog([{
-                type: 'string',
+                type: 'address',
                 name: 'winner',
                 indexed: false
             }], event.data, event.topics)
@@ -285,7 +285,7 @@ const startGameBet = async (web3: typeof Web3, player1: string, player2: string,
     const escrowAddress = await deployEscrow(web3, player1, player2, bet1+bet2)
     const gameAddress = await deployGame(web3, player1, player2, escrowAddress)
     console.log("player1: %s\nplayer2: %s", player1, player2)
-    // await playerChoice(gameAddress, 2, 1)
+    // await playerChoice(gameAddress, 1, 2)
     return gameAddress
 }
 
