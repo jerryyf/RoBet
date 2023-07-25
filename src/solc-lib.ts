@@ -34,7 +34,6 @@ export const writeOutput = (compiled: any, buildPath: string) => {
 
     for (let contractFileName in compiled.contracts) {
         const contractName = contractFileName.replace('.sol', '')
-        console.log(contractName)
         console.log('Writing: ', contractName + '.json to ' + buildPath)
         console.log(path.resolve(buildPath, contractName + '.json'))
         fsExtra.outputJsonSync(

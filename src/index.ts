@@ -233,14 +233,13 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
             { p1choice, p2choice },
             DEFAULT_RETURN_FORMAT, // the returned data will be formatted as a bigint
         );
-        const tx = await contract.methods.playGame(p1choice, p2choice).send({
+        const winner = await contract.methods.playGame(p1choice, p2choice).send({
             p1choice,
             p2choice,
             gasPrice,
             gas: GasHelper.gasPay(gasLimit)
         })
 
-        const winner = await contract.methods.playGame(p1choice, p2choice).call();
         console.log(`Winner is ${winner}`);
 
     } catch (error) {

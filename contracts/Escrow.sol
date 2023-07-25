@@ -49,5 +49,9 @@ contract Escrow {
         payable(p2).transfer(address(this).balance/2);
         return true;
     }
+
+    function getTotalBet() public view returns (uint256) {
+        return totalBet;
+    }
 }
 
