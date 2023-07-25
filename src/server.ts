@@ -22,7 +22,7 @@ app.post("/start", async (req, res) => {
             const response = {
                 "error": error
             };
-            return res.status(error).json(response);
+            return res.status(500).json(response);
         })
     
 });
@@ -37,7 +37,7 @@ app.post("/play", async (req, res) => {
             const response = {
                 "error": error
             };
-            return res.status(error).json(response);
+            return res.status(500).json(response);
         })
     
 });

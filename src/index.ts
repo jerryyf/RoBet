@@ -194,10 +194,10 @@ const deployEscrow = async (web3: typeof Web3, player1: string, player2: string,
  * 
  * @param web3 Web3 provider
  * @param gameAddr Game contract address
- * @param p1choice "scissors", "paper" or "rock"
+ * @param p1choice 1:"scissors", "paper" or "rock"
  * @param p2choice "scissors", "paper" or "rock"
  */
-export const playerChoice = async (gameAddr: string, p1choice: string, p2choice: string) => {
+export const playerChoice = async (gameAddr: string, p1choice: number, p2choice: number) => {
     let web3Provider: Web3BaseProvider
     let web3: typeof Web3
 
@@ -212,20 +212,20 @@ export const playerChoice = async (gameAddr: string, p1choice: string, p2choice:
     console.log('Connected to Web3 provider.')
 
     const buildPath = path.resolve(__dirname, '')
-    const contractName = "Escrow.sol"
-    // const accountName = `acc${playerNum}`
+    const contractName = "Game"
+    const accountName = `acc0`
 
     const abi = getABI(contractName, buildPath)
     const contract = new web3.eth.Contract(abi, gameAddr)
 
-    // try {
-    //     getAccount(web3, accountName)
-    // } catch (error) {
-    //     console.error(error)
-    //     throw 'Cannot access accounts'
-    // }
-    // console.log('Accessing account: ' + accountName)
-    // const from = web3.eth.accounts.wallet[0].address
+    try {
+        getAccount(web3, accountName)
+    } catch (error) {
+        console.error(error)
+        throw 'Cannot access accounts'
+    }
+    console.log('Accessing account: ' + accountName)
+    const from = web3.eth.accounts.wallet[0].address
 
     try {
         const gasPrice = await web3.eth.getGasPrice(ETH_DATA_FORMAT)
