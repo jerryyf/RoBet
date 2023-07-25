@@ -81,7 +81,7 @@ export default function Lobby() {
         }
       );
       fetcher.load("/lobby");
-    }, 5 * 1000);
+    }, 3 * 1000);
 
     return () => clearInterval(interval);
   }, []);

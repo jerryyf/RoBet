@@ -1,9 +1,13 @@
 import type { V2_MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
+import { useEffect } from "react";
 
 export const meta: V2_MetaFunction = () => [{ title: "Remix Notes" }];
 
 export default function Index() {
+  useEffect(() => {
+    localStorage.setItem("address", JSON.stringify(null));
+  }, []);
   return (
     <main className="relative min-h-screen bg-yellow-100 sm:flex sm:items-center sm:justify-center">
       <div className="relative sm:pb-16 sm:pt-8">

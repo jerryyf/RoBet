@@ -1,7 +1,21 @@
-import { LoaderArgs, json, redirect } from "@remix-run/node";
-import { useLoaderData, useSubmit } from "@remix-run/react";
-import { ToastContainer } from "react-toastify";
-import { getGame } from "~/models/game.server";
+import { Dialog, Transition } from "@headlessui/react";
+import { ActionArgs, LoaderArgs, json, redirect } from "@remix-run/node";
+import {
+  useActionData,
+  useFetcher,
+  useLoaderData,
+  useNavigate,
+  useSubmit,
+} from "@remix-run/react";
+import { Fragment, useEffect, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import {
+  addMoveGame,
+  createGame,
+  getGame,
+  getResultGame,
+} from "~/models/game.server";
+import { getLobby, addPlayerToLobby } from "~/models/lobby.server";
 
 export const loader = async ({ params, request }: LoaderArgs) => {
   const id = params.id;
@@ -9,23 +23,68 @@ export const loader = async ({ params, request }: LoaderArgs) => {
 
   if (address && id) {
     const game = await getGame(id);
-    return json({ game, address });
+    const result = await getResultGame(id);
+    return json({ game, address, result });
   } else {
     return redirect("/lobby");
   }
 };
 
-export default function Lobby() {
-  const { game, address } = useLoaderData<typeof loader>();
-  const submit = useSubmit();
-  //const data = useActionData();
-  //const user = useUser();
+export const action = async ({ params, request }: ActionArgs) => {
+  const formData = await request.formData();
+  console.dir(formData, { depth: null });
+  const address = formData.get("address")?.toString() ?? "";
+  const value = formData.get("value")?.toString() ?? "";
+  const delay = (ms: number | undefined) =>
+    new Promise((res) => setTimeout(res, ms));
+  await delay(4000);
+  const result = await addMoveGame(params?.id ?? "", address, parseInt(value));
+  console.log("________RESULT__________");
+  console.log(result);
+  if (result === null || result === undefined) return null;
+  if (result === true) return { status: 200 };
+  return { status: result };
+};
 
-  //   useEffect(() => {
-  //     if (data?.status === 404) {
-  //       toast.error("Please input a proper wallet address and wager");
-  //     }
-  //   }, [data]);
+export default function Lobby() {
+  const { game, address, result } = useLoaderData<typeof loader>();
+  const submit = useSubmit();
+  const fetcher = useFetcher();
+  const data = useActionData();
+  const navigate = useNavigate();
+  const [isDraw, setIsDraw] = useState(false);
+  const [isWin, setIsWin] = useState(false);
+  const [isLoss, setIsLoss] = useState(false);
+  const opponentAddress =
+    game?.challenger === address ? game?.creator : game?.challenger;
+
+  useEffect(() => {
+    if (data?.status === 200) {
+      setIsDraw(true);
+    }
+    if (data?.status === address) {
+      setIsWin(true);
+    }
+    if (data?.status === opponentAddress) {
+      setIsLoss(true);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetcher.load(`/game/${game?.id}/${address}`);
+    }, 3 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (fetcher.data) {
+      if (fetcher?.data?.result === true) setIsDraw(true);
+      if (fetcher?.data?.result === address) setIsWin(true);
+      if (fetcher?.data?.result === opponentAddress) setIsLoss(true);
+    }
+  }, [fetcher.data]);
 
   return (
     <>
@@ -52,7 +111,12 @@ export default function Lobby() {
                 <div className=" mx-auto mt-10 max-w-sm items-center  sm:flex sm:max-w-none sm:justify-center">
                   <div className="space-y-4 sm:mx-auto sm:inline-grid sm:grid-cols-3 sm:gap-5 sm:space-y-0">
                     <button
-                      onClick={() => submit({ address: address, value: 1 })}
+                      onClick={() =>
+                        submit(
+                          { address: address, value: 1 },
+                          { method: "post" }
+                        )
+                      }
                     >
                       <svg
                         className="hover:fill-slate-600"
@@ -66,7 +130,15 @@ export default function Lobby() {
                       </svg>
                     </button>
 
-                    <button className="p-0">
+                    <button
+                      onClick={() =>
+                        submit(
+                          { address: address, value: 2 },
+                          { method: "post" }
+                        )
+                      }
+                      className="p-0"
+                    >
                       <svg
                         className="hover:fill-slate-600"
                         width="380"
@@ -102,7 +174,15 @@ export default function Lobby() {
                         </g>
                       </svg>
                     </button>
-                    <button className="p-0">
+                    <button
+                      className="p-0"
+                      onClick={() =>
+                        submit(
+                          { address: address, value: 3 },
+                          { method: "post" }
+                        )
+                      }
+                    >
                       <svg
                         version="1.0"
                         xmlns="http://www.w3.org/2000/svg"
@@ -198,6 +278,168 @@ export default function Lobby() {
           </div>
         </div>
       </div>
+      <Transition appear show={isDraw} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsDraw(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform justify-center overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-center text-6xl font-medium leading-6 text-slate-600"
+                  >
+                    DRAW
+                  </Dialog.Title>
+                  <h1 className=" mt-12 text-center text-2xl font-medium leading-6 text-slate-600">
+                    Your deposit has been returned
+                  </h1>
+                  <div className="mt-8 flex justify-center">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
+                      onClick={() => navigate("/")}
+                    >
+                      Back to Lobby
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+      <Transition appear show={isLoss} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsLoss(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform justify-center overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-center text-6xl font-medium leading-6 text-slate-600"
+                  >
+                    LOSER
+                  </Dialog.Title>
+                  <h1 className=" mt-12 text-center text-2xl font-medium leading-6 text-slate-600">
+                    You lost {game?.wager} eth
+                  </h1>
+                  <div className="mt-8 flex justify-center">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
+                      onClick={() => navigate("/")}
+                    >
+                      Back to Lobby
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+      <Transition appear show={isWin} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsWin(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform justify-center overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-center text-6xl font-medium leading-6 text-slate-600"
+                  >
+                    WINNER
+                  </Dialog.Title>
+                  <h1 className=" mt-12 text-center text-2xl font-medium leading-6 text-slate-600">
+                    You earnt {game?.wager} eth
+                  </h1>
+                  <div className="mt-8 flex justify-center">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
+                      onClick={() => navigate("/")}
+                    >
+                      Back to Lobby
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </>
   );
 }
