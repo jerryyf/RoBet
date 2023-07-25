@@ -154,7 +154,7 @@ contract Game {
       winnerAddress = p2;
     }
     emit GameOver(winnerAddress);
-    // gameOver(winnerAddress);
+    gameOver(winnerAddress);
     return winnerAddress;
   }
 

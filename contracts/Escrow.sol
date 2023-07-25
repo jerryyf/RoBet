@@ -41,17 +41,23 @@ contract Escrow {
 
     function payoutWinner(address winner) public returns (bool) {
         payable(winner).transfer(address(this).balance);
+        inUse = false;
         return true;
     }
 
     function returnBets() public returns (bool) {
         payable(p1).transfer(address(this).balance/2);
         payable(p2).transfer(address(this).balance/2);
+        inUse = false;
         return true;
     }
 
     function getTotalBet() public view returns (uint256) {
         return totalBet;
+    }
+
+    function getUse() public view returns (bool) {
+        return inUse;
     }
 }
 

@@ -209,7 +209,6 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
         console.error(error)
         throw 'Web3 cannot be initialised.'
     }
-    console.log('Connected to Web3 provider.')
 
     const buildPath = path.resolve(__dirname, '')
     const contractName = "Game"
@@ -217,8 +216,6 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
 
     const abi = getABI(contractName, buildPath)
     const contract = new web3.eth.Contract(abi, gameAddr)
-    const p1 = await contract.methods.getP1().call()
-    console.log(p1)
 
     try {
         getAccount(web3, accountName)
@@ -226,7 +223,6 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
         console.error(error)
         throw 'Cannot access accounts'
     }
-    console.log('Accessing account: ' + accountName)
     const from = web3.eth.accounts.wallet[0].address
 
     try {
@@ -280,12 +276,15 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
  * @param {number} bet1 bet amount of player 2
  */
 const startGameBet = async (web3: typeof Web3, player1: string, player2: string, bet1: number, bet2: number) => {
+    const buildPath = path.resolve(__dirname, '')
     // deploy the escrow contract
     if (bet1 != bet2) throw Error;
     const escrowAddress = await deployEscrow(web3, player1, player2, bet1+bet2)
     const gameAddress = await deployGame(web3, player1, player2, escrowAddress)
     console.log("player1: %s\nplayer2: %s", player1, player2)
-    // await playerChoice(gameAddress, 1, 2)
+    await playerChoice(gameAddress, 1, 2)
+    const escrow = new web3.eth.Contract(getABI("Escrow.sol", buildPath), escrowAddress)
+    console.log(await escrow.methods.getUse().call())
     return gameAddress
 }
 
