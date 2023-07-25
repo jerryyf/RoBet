@@ -14,3 +14,13 @@ model lobby {
   challenger String?
   createdAt  DateTime @default(now())
 }
+
+model game {
+  id                String   @id @default(cuid())
+  wager             Int
+  creator           String
+  challenger        String
+  creator_choice    Int?
+  challenger_choice Int?
+  createdAt         DateTime @default(now())
+}
