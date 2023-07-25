@@ -256,6 +256,31 @@ if (cmdArgs.length < 1) {
     process.exitCode = 1
 }
 
+/**
+ * A wrapper function around startGameBet for the server API to use
+ * @param p1 player 1 address
+ * @param p2 player 2 address
+ * @param p1bet player 1 bet
+ * @param p2bet player 2 bet
+ */
+export const startGameBetWrapper = async (p1: string, p2: string, p1bet: number, p2bet: number) => {
+    let web3Provider: Web3BaseProvider;
+    let web3: typeof Web3;
+
+    // Init Web3 provider
+    try {
+        web3Provider = initProvider();
+        web3 = new Web3(web3Provider);
+    } catch (error) {
+        console.error(error);
+        throw 'Web3 cannot be initialised.';
+    }
+    console.log('Connected to Web3 provider.');
+
+    startGameBet(web3, p1, p2, p1bet, p2bet);
+}
+
+// command line version
 (async () => {
 
     let web3Provider: Web3BaseProvider
