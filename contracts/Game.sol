@@ -11,6 +11,8 @@ contract Game {
   address public p1;
   address public p2;
   address public p0; // Indicating no player (default value is zero)
+  string public player1;
+  string public player2;
 
   // Escrow contract address and object
   address public escrowAddr;
@@ -48,6 +50,9 @@ contract Game {
   // event RoundTwoOver();
   event GameOver(address winner);
 
+  event winnerChosen(string winner);
+
+
   /**
    * @dev set player 1 and 2 addresses
    *
@@ -55,6 +60,8 @@ contract Game {
   constructor (string memory _player1, string memory _player2, string memory _escrowAddr) payable {
     p1 = address(bytes20(bytes(_player1)));
     p2 = address(bytes20(bytes(_player2)));
+    player1 = _player1;
+    player2 = _player2;
     escrowAddr = address(bytes20(bytes(_escrowAddr)));
     escrowContract = Escrow(escrowAddr);
   }
@@ -66,6 +73,14 @@ contract Game {
 
   function setP2(address _address) public {
     p2 = _address;
+  }
+
+  function getP1() public view returns (string memory) {
+    return player1;
+  }
+
+  function getP2() public view returns (string memory) {
+    return player2;
   }
 
   // Functions called by frontend to send result of rounds and game to backend
@@ -128,13 +143,15 @@ contract Game {
     Advances 1 round of the game. Returns 0 for draw, 1 for p1 win, 2 for p2 win.
   */
   function playGame(Choice p1choice, Choice p2choice) public returns (address) {
-    address ret; // should default to address(0);
+    string memory frontendWinner; // string address of the winner
+    address winnerAddress; // should default to address(0);
     // p1 win conditions
     if (p1choice == Choice.scissors && p2choice == Choice.paper ||
       p1choice == Choice.paper && p2choice == Choice.rock ||
       p1choice == Choice.rock && p2choice == Choice.scissors)
     {
-      ret = p1;
+      winnerAddress = p1;
+      frontendWinner = player1;
     }
 
     // p2 win conditions
@@ -142,10 +159,12 @@ contract Game {
     p2choice == Choice.paper && p1choice == Choice.rock ||
     p2choice == Choice.rock && p1choice == Choice.scissors)
     {
-      ret = p2;
+      winnerAddress = p2;
+      frontendWinner = player2;
     }
-    gameOver(ret);
-    return ret;
+    // gameOver(winnerAddress);
+    emit winnerChosen(frontendWinner);
+    return winnerAddress;
   }
 
   function gameOver(address winner) public returns (bool) {

@@ -217,6 +217,8 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
 
     const abi = getABI(contractName, buildPath)
     const contract = new web3.eth.Contract(abi, gameAddr)
+    const p1 = await contract.methods.getP1().call()
+    console.log(p1)
 
     try {
         getAccount(web3, accountName)
@@ -230,17 +232,37 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
     try {
         const gasPrice = await web3.eth.getGasPrice(ETH_DATA_FORMAT)
         const gasLimit = await contract.methods.playGame(p1choice, p2choice).estimateGas(
-            { p1choice, p2choice },
+            {
+                to: gameAddr,
+                from: from,
+                data: [p1choice, p2choice],
+            },
             DEFAULT_RETURN_FORMAT, // the returned data will be formatted as a bigint
         );
-        const winner = await contract.methods.playGame(p1choice, p2choice).send({
+
+        const winner = await web3.eth.subscribe('logs', {
+            address: gameAddr,
+            topics: [web3.utils.sha3('winnerChosen(string)')]
+        })
+
+        winner.on('data', async (event: any) => {
+            const eventData = web3.eth.abi.decodeLog([{
+                type: 'string',
+                name: 'winner',
+                indexed: false
+            }], event.data, event.topics)
+            console.log(`Winner is ${eventData.winner}`)
+        })
+
+        const tx = await contract.methods.playGame(p1choice, p2choice).send({
             p1choice,
             p2choice,
             gasPrice,
-            gas: GasHelper.gasPay(gasLimit)
+            gas: GasHelper.gasPay(gasLimit),
+            from: from
         })
 
-        console.log(`Winner is ${winner}`);
+        // console.log(`Winner is ${winner}`);
 
     } catch (error) {
         console.error(error)
@@ -262,6 +284,8 @@ const startGameBet = async (web3: typeof Web3, player1: string, player2: string,
     if (bet1 != bet2) throw Error;
     const escrowAddress = await deployEscrow(web3, player1, player2, bet1+bet2)
     const gameAddress = await deployGame(web3, player1, player2, escrowAddress)
+    console.log("player1: %s\nplayer2: %s", player1, player2)
+    // await playerChoice(gameAddress, 2, 1)
     return gameAddress
 }
 
