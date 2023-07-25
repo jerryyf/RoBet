@@ -127,15 +127,14 @@ contract Game {
   /*
     Advances 1 round of the game. Returns 0 for draw, 1 for p1 win, 2 for p2 win.
   */
-  function playGame(Choice p1choice, Choice p2choice) pure public returns (int) {
+  function playGame(Choice p1choice, Choice p2choice) public returns (address) {
+    address ret; // should default to address(0);
     // p1 win conditions
     if (p1choice == Choice.scissors && p2choice == Choice.paper ||
       p1choice == Choice.paper && p2choice == Choice.rock ||
       p1choice == Choice.rock && p2choice == Choice.scissors)
     {
-      return 1;
-      // uncomment if address needed
-      // return p1;
+      ret = p1;
     }
 
     // p2 win conditions
@@ -143,9 +142,10 @@ contract Game {
     p2choice == Choice.paper && p1choice == Choice.rock ||
     p2choice == Choice.rock && p1choice == Choice.scissors)
     {
-      return 2;
+      ret = p2;
     }
-    else return 0; // draw condition
+    gameOver(ret);
+    return ret;
   }
 
   function gameOver(address winner) public returns (bool) {
