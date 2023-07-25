@@ -51,10 +51,11 @@ const getAccount = (web3: typeof Web3, name: string) => {
  */
 const getABI = (contractName: string, buildPath: string): AbiStruct => {
     try {
-        const filePath = path.resolve(buildPath, contractName + '.json')
+        const resName = contractName.replace('.sol', '')
+        const filePath = path.resolve(buildPath, resName + '.json')
         const contractData = fs.readFileSync(filePath, 'utf8')
         const contractJson = JSON.parse(contractData)
-        return contractJson[contractName][contractName].abi
+        return contractJson[contractName][resName].abi
     } catch (error) {
         throw 'Cannot read account'
     }
@@ -215,7 +216,7 @@ const startGameBet = async (web3: typeof Web3, player1: string, player2: string,
  */
 const payoutWinner = async (web3: typeof Web3, contractAddress: string, winner: string, loser: string) => {
     const buildPath = path.resolve(__dirname, '')
-    const contractName = "Escrow"
+    const contractName = "Escrow.sol"
 
     const abi = getABI(contractName, buildPath)
     const contract = new web3.eth.Contract(abi, contractAddress)
