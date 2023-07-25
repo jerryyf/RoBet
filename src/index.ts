@@ -51,10 +51,11 @@ const getAccount = (web3: typeof Web3, name: string) => {
  */
 const getABI = (contractName: string, buildPath: string): AbiStruct => {
     try {
-        const filePath = path.resolve(buildPath, contractName + '.json')
+        const resName = contractName.replace('.sol', '')
+        const filePath = path.resolve(buildPath, resName + '.json')
         const contractData = fs.readFileSync(filePath, 'utf8')
         const contractJson = JSON.parse(contractData)
-        return contractJson[contractName][contractName].abi
+        return contractJson[contractName][resName].abi
     } catch (error) {
         throw 'Cannot read account'
     }
@@ -123,6 +124,7 @@ const deployGame = async (web3: typeof Web3, player1: string, player2: string, e
     }
 
 }
+
 /**
  * Create and deploy an escrow contract holding ETH
  * @param {typeof Web3} web3 Web3 provider
@@ -189,6 +191,81 @@ const deployEscrow = async (web3: typeof Web3, player1: string, player2: string,
 }
 
 /**
+ * 
+ * @param web3 Web3 provider
+ * @param gameAddr Game contract address
+ * @param p1choice 1:"scissors", "paper" or "rock"
+ * @param p2choice "scissors", "paper" or "rock"
+ */
+export const playerChoice = async (gameAddr: string, p1choice: number, p2choice: number) => {
+    let web3Provider: Web3BaseProvider
+    let web3: typeof Web3
+
+    // Init Web3 provider
+    try {
+        web3Provider = initProvider()
+        web3 = new Web3(web3Provider)
+    } catch (error) {
+        console.error(error)
+        throw 'Web3 cannot be initialised.'
+    }
+
+    const buildPath = path.resolve(__dirname, '')
+    const contractName = "Game"
+    const accountName = `acc0`
+
+    const abi = getABI(contractName, buildPath)
+    const contract = new web3.eth.Contract(abi, gameAddr)
+
+    try {
+        getAccount(web3, accountName)
+    } catch (error) {
+        console.error(error)
+        throw 'Cannot access accounts'
+    }
+    const from = web3.eth.accounts.wallet[0].address
+
+    try {
+        const gasPrice = await web3.eth.getGasPrice(ETH_DATA_FORMAT)
+        const gasLimit = await contract.methods.playGame(p1choice, p2choice).estimateGas(
+            {
+                to: gameAddr,
+                from: from,
+                data: [p1choice, p2choice],
+            },
+            DEFAULT_RETURN_FORMAT, // the returned data will be formatted as a bigint
+        );
+
+        const winner = await web3.eth.subscribe('logs', {
+            address: gameAddr,
+            topics: [web3.utils.sha3('GameOver(address)')]
+        })
+
+        winner.on('data', async (event: any) => {
+            const eventData = web3.eth.abi.decodeLog([{
+                type: 'address',
+                name: 'winner',
+                indexed: false
+            }], event.data, event.topics)
+            console.log(`Winner is ${eventData.winner}`)
+        })
+
+        const tx = await contract.methods.playGame(p1choice, p2choice).send({
+            p1choice,
+            p2choice,
+            gasPrice,
+            gas: GasHelper.gasPay(gasLimit),
+            from: from
+        })
+
+        // console.log(`Winner is ${winner}`);
+
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+/**
  * Create an escrow between player 1 and 2 with the given supply
  * as the total of bets
  * 
@@ -199,10 +276,16 @@ const deployEscrow = async (web3: typeof Web3, player1: string, player2: string,
  * @param {number} bet1 bet amount of player 2
  */
 const startGameBet = async (web3: typeof Web3, player1: string, player2: string, bet1: number, bet2: number) => {
+    const buildPath = path.resolve(__dirname, '')
     // deploy the escrow contract
     if (bet1 != bet2) throw Error;
     const escrowAddress = await deployEscrow(web3, player1, player2, bet1+bet2)
     const gameAddress = await deployGame(web3, player1, player2, escrowAddress)
+    console.log("player1: %s\nplayer2: %s", player1, player2)
+    await playerChoice(gameAddress, 1, 2)
+    const escrow = new web3.eth.Contract(getABI("Escrow.sol", buildPath), escrowAddress)
+    console.log(await escrow.methods.getUse().call())
+    return gameAddress
 }
 
 /**
@@ -215,7 +298,7 @@ const startGameBet = async (web3: typeof Web3, player1: string, player2: string,
  */
 const payoutWinner = async (web3: typeof Web3, contractAddress: string, winner: string, loser: string) => {
     const buildPath = path.resolve(__dirname, '')
-    const contractName = "Escrow"
+    const contractName = "Escrow.sol"
 
     const abi = getABI(contractName, buildPath)
     const contract = new web3.eth.Contract(abi, contractAddress)
@@ -249,12 +332,6 @@ const payoutWinner = async (web3: typeof Web3, contractAddress: string, winner: 
     }
 }
 
-// Get command line arguments
-const cmdArgs = process.argv.slice(2)
-if (cmdArgs.length < 1) {
-    console.error("node programName cmd, e.g. node build/index.js deploy")
-    process.exitCode = 1
-}
 
 /**
  * A wrapper function around startGameBet for the server API to use
@@ -262,6 +339,7 @@ if (cmdArgs.length < 1) {
  * @param p2 player 2 address
  * @param p1bet player 1 bet
  * @param p2bet player 2 bet
+ * @returns game contract address
  */
 export const startGameBetWrapper = async (p1: string, p2: string, p1bet: number, p2bet: number) => {
     let web3Provider: Web3BaseProvider;
@@ -277,7 +355,14 @@ export const startGameBetWrapper = async (p1: string, p2: string, p1bet: number,
     }
     console.log('Connected to Web3 provider.');
 
-    startGameBet(web3, p1, p2, p1bet, p2bet);
+    return startGameBet(web3, p1, p2, p1bet, p2bet)
+}
+
+// Get command line arguments
+const cmdArgs = process.argv.slice(2)
+if (cmdArgs.length < 1) {
+    console.error("node programName cmd, e.g. node build/index.js deploy")
+    process.exitCode = 1
 }
 
 // command line version
