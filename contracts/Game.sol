@@ -2,12 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-//import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
+import "./Escrow.sol";
 
 /// @title Contract to handle game state
-
-import "./Escrow.sol";
 
 contract Game {
   // Player addresses
@@ -17,7 +14,7 @@ contract Game {
 
   // Escrow contract address and object
   address public escrowAddr;
-  Escrow public escrowContract;
+  Escrow escrowContract;
 
   // Player scores
   uint public p1Score;
@@ -59,6 +56,7 @@ contract Game {
     p1 = address(bytes20(bytes(_player1)));
     p2 = address(bytes20(bytes(_player2)));
     escrowAddr = address(bytes20(bytes(_escrowAddr)));
+    escrowContract = Escrow(escrowAddr);
   }
 
   // Functions called by frontend to send account address of each player
@@ -148,6 +146,11 @@ contract Game {
       return 2;
     }
     else return 0; // draw condition
+  }
+
+  function gameOver(address winner) public returns (bool) {
+    if (winner != address(0)) return escrowContract.payoutWinner(winner);
+    else return escrowContract.returnBets();
   }
 
   modifier isR1() {
