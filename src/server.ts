@@ -41,6 +41,7 @@ app.post("/play", async (req, res) => {
         })
     
 });
+
 const server = app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });
