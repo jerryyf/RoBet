@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # Script to prompt for bets

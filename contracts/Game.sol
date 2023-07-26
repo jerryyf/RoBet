@@ -48,15 +48,14 @@ contract Game {
   // event RoundTwoOver();
   event GameOver(address winner);
 
-
   /**
    * @dev set player 1 and 2 addresses
    *
    */
-  constructor (address _player1, address _player2, address _escrowAddr) payable {
-    p1 = _player1;
-    p2 = _player2;
-    escrowAddr = _escrowAddr;
+  constructor (string memory _player1, string memory _player2, string memory _escrowAddr) payable {
+    p1 = address(bytes20(bytes(_player1)));
+    p2 = address(bytes20(bytes(_player2)));
+    escrowAddr = address(bytes20(bytes(_escrowAddr)));
     escrowContract = Escrow(escrowAddr);
   }
 
@@ -67,14 +66,6 @@ contract Game {
 
   function setP2(address _address) public {
     p2 = _address;
-  }
-
-  function getP1() public view returns (address) {
-    return p1;
-  }
-
-  function getP2() public view returns (address) {
-    return p2;
   }
 
   // Functions called by frontend to send result of rounds and game to backend
@@ -136,26 +127,25 @@ contract Game {
   /*
     Advances 1 round of the game. Returns 0 for draw, 1 for p1 win, 2 for p2 win.
   */
-  function playGame(Choice p1choice, Choice p2choice) public returns (address) {
-    address winnerAddress; // should default to address(0);
+  function playGame(int p1choice, int p2choice) public returns (bool) {
+    address ret; // should default to address(0);
     // p1 win conditions
-    if (p1choice == Choice.scissors && p2choice == Choice.paper ||
-      p1choice == Choice.paper && p2choice == Choice.rock ||
-      p1choice == Choice.rock && p2choice == Choice.scissors)
+    if (p1choice == 1 && p2choice == 2 ||
+      p1choice == 2 && p2choice == 3 ||
+      p1choice == 3 && p2choice == 1)
     {
-      winnerAddress = p1;
+      ret = p1;
     }
 
     // p2 win conditions
-    if (p2choice == Choice.scissors && p1choice == Choice.paper ||
-    p2choice == Choice.paper && p1choice == Choice.rock ||
-    p2choice == Choice.rock && p1choice == Choice.scissors)
+    if (p1choice == 1 && p2choice == 2 ||
+      p1choice == 2 && p2choice == 3 ||
+      p1choice == 3 && p2choice == 1)
     {
-      winnerAddress = p2;
+      ret = p2;
     }
-    emit GameOver(winnerAddress);
-    gameOver(winnerAddress);
-    return winnerAddress;
+    emit GameOver(ret);
+    return true;
   }
 
   function gameOver(address winner) public returns (bool) {

@@ -46,6 +46,7 @@ contract Escrow {
     }
 
     function getTotalBet() public view returns (uint) {
+        require(inUse);
         return address(this).balance;
     }
 
