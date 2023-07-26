@@ -31,12 +31,14 @@ contract Escrow {
     }
 
     function payoutWinner(address winner) public returns (bool) {
+        require(inUse);
         payable(winner).transfer(address(this).balance);
         inUse = false;
         return true;
     }
 
     function returnBets() public returns (bool) {
+        require(inUse);
         payable(p1).transfer(address(this).balance/2);
         payable(p2).transfer(address(this).balance);
         inUse = false;

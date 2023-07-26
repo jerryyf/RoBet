@@ -194,8 +194,9 @@ const deployEscrow = async (web3: typeof Web3, player1: string, player2: string,
  * 
  * @param web3 Web3 provider
  * @param gameAddr Game contract address
- * @param p1choice 1:"scissors", "paper" or "rock"
- * @param p2choice "scissors", "paper" or "rock"
+ * @param p1choice 1:"scissors", 2:"paper" 3:"rock"
+ * @param p2choice 1:"scissors", 2:"paper" 3:"rock"
+ * @returns winner (or draw)
  */
 export const playerChoice = async (gameAddr: string, p1choice: number, p2choice: number) => {
     let web3Provider: Web3BaseProvider
@@ -258,7 +259,7 @@ export const playerChoice = async (gameAddr: string, p1choice: number, p2choice:
             from: from
         })
 
-        // console.log(`Winner is ${winner}`);
+        return winner;
 
     } catch (error) {
         console.error(error)
