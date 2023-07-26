@@ -15,6 +15,10 @@ Decentralised P2P scissors paper rock betting. Runs on Ethereum blockchain, smar
 - `npm run dev` will start with prefilled player 1 and 2 addresses
 - `npm run start` for demo
 
+## Unit testing
+
+- `npm run test`
+
 ## Accounts reference
 
 - acc0: manager that deploys
