@@ -280,7 +280,7 @@ const startGameBet = async (web3: typeof Web3, player1: string, player2: string,
     const buildPath = path.resolve(__dirname, '')
     if (bet1 != bet2) throw Error;
 
-    // deploy escrow and game contracts
+    // deploy the contracts
     const escrowAddress = await deployEscrow(web3, player1, player2, bet1+bet2)
 
     // send eth to escrow
@@ -292,7 +292,7 @@ const startGameBet = async (web3: typeof Web3, player1: string, player2: string,
     console.log("player1: %s\nplayer2: %s", player1, player2)
 
     // run the game
-    await playerChoice(gameAddress, 1, 2)
+    // await playerChoice(gameAddress, 1, 2)
 
     console.log(await escrow.methods.getBalance(player1).call())
     console.log(await escrow.methods.getBalance(player2).call())
@@ -300,6 +300,14 @@ const startGameBet = async (web3: typeof Web3, player1: string, player2: string,
     return gameAddress
 }
 
+/**
+ * Create an escrow between player 1 and 2 with the given supply
+ * as the total of bets
+ * 
+ * @param {typeof Web3} Web3 Web3 provider 
+ * @param {string} escrowAddress address of escrow contract
+ * @param {number} playerBet bet amount of players
+ */
 const sendEther = async (web3: typeof Web3, escrowAddress: string, playerBet: number) => {
     try {
         getAccount(web3, "acc0")
