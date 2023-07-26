@@ -26,6 +26,10 @@ contract Escrow {
         inUse = true;                   // Contract in use
     }
 
+    function deposit() public payable {
+        require((msg.sender == p1 || msg.sender == p2), "Do not try to enter game");
+    }
+
     function payoutWinner(address winner) public returns (bool) {
         require(inUse);
         payable(winner).transfer(address(this).balance);
@@ -36,18 +40,22 @@ contract Escrow {
     function returnBets() public returns (bool) {
         require(inUse);
         payable(p1).transfer(address(this).balance/2);
-        payable(p2).transfer(address(this).balance/2);
+        payable(p2).transfer(address(this).balance);
         inUse = false;
         return true;
     }
 
-    function getTotalBet() public view returns (uint256) {
+    function getTotalBet() public view returns (uint) {
         require(inUse);
-        return totalBet;
+        return address(this).balance;
     }
 
     function getUse() public view returns (bool) {
         return inUse;
+    }
+
+    function getBalance(address _address) public view returns (uint) {
+        return _address.balance;
     }
 }
 

@@ -282,58 +282,51 @@ const startGameBet = async (web3: typeof Web3, player1: string, player2: string,
 
     // deploy escrow and game contracts
     const escrowAddress = await deployEscrow(web3, player1, player2, bet1+bet2)
+
+    // send eth to escrow
+    await sendEther(web3, escrowAddress, bet1)
+
     const gameAddress = await deployGame(web3, player1, player2, escrowAddress)
 
-    console.log("player1: %s\nplayer2: %s", player1, player2)
     const escrow = new web3.eth.Contract(getABI("Escrow.sol", buildPath), escrowAddress)
-    console.log(await escrow.methods.getUse().call())
+    console.log("player1: %s\nplayer2: %s", player1, player2)
+
+    // run the game
+    await playerChoice(gameAddress, 1, 2)
+
+    console.log(await escrow.methods.getBalance(player1).call())
+    console.log(await escrow.methods.getBalance(player2).call())
+
     return gameAddress
 }
 
-/**
- * Transact all tokens in the escrow contract from the loser to the winner
- * 
- * @param {typeof Web3} web3 Web3 provider
- * @param {string} contractAddress address of escrow contract of game
- * @param {string} winner address of the winner of the game
- * @param {string} loser address of the loser of the game
- */
-const payoutWinner = async (web3: typeof Web3, contractAddress: string, winner: string, loser: string) => {
-    const buildPath = path.resolve(__dirname, '')
-    const contractName = "Escrow.sol"
-
-    const abi = getABI(contractName, buildPath)
-    const contract = new web3.eth.Contract(abi, contractAddress)
-    const totalSupply = await contract.methods.totalSupply().call()
+const sendEther = async (web3: typeof Web3, escrowAddress: string, playerBet: number) => {
+    try {
+        getAccount(web3, "acc0")
+        getAccount(web3, "acc1")
+        getAccount(web3, "acc2")
+    } catch (error) {
+        console.error(error)
+        throw 'Cannot access accounts'
+    }
+    const escrow = new web3.eth.Contract(getABI("Escrow", path.resolve(__dirname, '')), escrowAddress)
+    const p1 = web3.eth.accounts.wallet[1].address
+    const p2 = web3.eth.accounts.wallet[2].address
 
     try {
-
-        const gasPrice = await web3.eth.getGasPrice(ETH_DATA_FORMAT)
-        const gasLimit = await contract.methods.transfer(winner, totalSupply).estimateGas(
-            { loser },
-            DEFAULT_RETURN_FORMAT, // the returned data will be formatted as a bigint
-        );
-        const tx = await contract.methods.transfer(winner, totalSupply).send({
-            loser,
-            gasPrice,
-            gas: GasHelper.gasPay(gasLimit)
+        const tx1 = await escrow.methods.deposit().send({
+            from: p1,
+            value: web3.utils.toWei(playerBet, 'ether')
         })
 
-        console.log(`20.00 tokens transferred from address ${loser} to address ${winner} in transaction ${tx.transactionHash}`)
-
-        // Check balance as address 0 and 1
-        const balance0 = await contract.methods.balanceOf(loser).call()
-        console.log(`Balance of loser is: ${balance0}`)
-
-        const balance1 = await contract.methods.balanceOf(winner).call()
-        console.log(`Balance of winner is: ${balance1}`)
-
+        const tx2 = await escrow.methods.deposit().send({
+            from: p2,
+            value: web3.utils.toWei(playerBet, 'ether')
+        })
     } catch (error) {
-        console.error('Error while transferring tokens and checking balance')
         console.error(error)
-    }
-}
-
+    }    
+} 
 
 /**
  * A wrapper function around startGameBet for the server API to use
@@ -388,14 +381,7 @@ if (cmdArgs.length < 1) {
         // given the two accounts and bets, create and deploy an escrow
         // contract that holds the totalSupply of the two bets
         startGameBet(web3, cmdArgs[1], cmdArgs[2], parseInt(cmdArgs[3]), parseInt(cmdArgs[4]))
-    } else if (cmdArgs[0] == 'play') {
-        // takes in game contract address + player choices
-        playerChoice(cmdArgs[1], parseInt(cmdArgs[2]), parseInt(cmdArgs[3]))
-    } else if (cmdArgs[0] == 'end') {
-        // when the game is complete, pay out the winner the entire
-        // escrow contract by transferring from the loser to the winner
-        payoutWinner(web3, cmdArgs[1], cmdArgs[2], cmdArgs[3])
-    }
+    } 
 
     process.exitCode = 0
 
