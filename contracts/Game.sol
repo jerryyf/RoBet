@@ -127,25 +127,26 @@ contract Game {
   /*
     Advances 1 round of the game. Returns 0 for draw, 1 for p1 win, 2 for p2 win.
   */
-  function playGame(int p1choice, int p2choice) public returns (bool) {
-    address ret; // should default to address(0);
+  function playGame(Choice p1choice, Choice p2choice) public returns (address) {
+    address winnerAddress; // should default to address(0);
     // p1 win conditions
-    if (p1choice == 1 && p2choice == 2 ||
-      p1choice == 2 && p2choice == 3 ||
-      p1choice == 3 && p2choice == 1)
+    if (p1choice == Choice.scissors && p2choice == Choice.paper ||
+      p1choice == Choice.paper && p2choice == Choice.rock ||
+      p1choice == Choice.rock && p2choice == Choice.scissors)
     {
-      ret = p1;
+      winnerAddress = p1;
     }
 
     // p2 win conditions
-    if (p1choice == 1 && p2choice == 2 ||
-      p1choice == 2 && p2choice == 3 ||
-      p1choice == 3 && p2choice == 1)
+    if (p2choice == Choice.scissors && p1choice == Choice.paper ||
+    p2choice == Choice.paper && p1choice == Choice.rock ||
+    p2choice == Choice.rock && p1choice == Choice.scissors)
     {
-      ret = p2;
+      winnerAddress = p2;
     }
-    emit GameOver(ret);
-    return true;
+    emit GameOver(winnerAddress);
+    gameOver(winnerAddress);
+    return winnerAddress;
   }
 
   function gameOver(address winner) public returns (bool) {
